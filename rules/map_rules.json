@@ -1,0 +1,250 @@
+{
+  "map": {
+    "global_width": 10,
+    "global_height": 10,
+    "local_width": 10,
+    "local_height": 10
+  },
+  "layers": {
+    "temperature": {
+      "description": "1 is hottest, 9 is coldest.",
+      "effective_scale": {
+        "1": "Abrasadora",
+        "2": "Muy calida",
+        "3": "Calida",
+        "4": "Templada calida",
+        "5": "Templada",
+        "6": "Templada fria",
+        "7": "Fria",
+        "8": "Muy fria",
+        "9": "Gelida"
+      },
+      "global_weights": {
+        "1": 35,
+        "2": 45,
+        "3": 20
+      },
+      "local_weights": {
+        "1": 30,
+        "2": 40,
+        "3": 30
+      },
+      "local_generation": {
+        "smoothing_iterations": 2,
+        "max_neighbor_delta": 1
+      }
+    },
+    "humidity": {
+      "description": "1 is wettest, 9 is driest.",
+      "effective_scale": {
+        "1": "Pantanosa",
+        "2": "Muy humeda",
+        "3": "Humeda",
+        "4": "Subhumeda",
+        "5": "Media",
+        "6": "Seca moderada",
+        "7": "Seca",
+        "8": "Arida",
+        "9": "Desertica"
+      },
+      "global_weights": {
+        "1": 30,
+        "2": 45,
+        "3": 25
+      },
+      "local_weights": {
+        "1": 30,
+        "2": 40,
+        "3": 30
+      },
+      "local_generation": {
+        "smoothing_iterations": 2,
+        "max_neighbor_delta": 1
+      }
+    },
+    "altitude": {
+      "description": "1 is highest land, 9 is deepest sea.",
+      "effective_scale": {
+        "1": "Cima Montana",
+        "2": "Montana",
+        "3": "Meseta",
+        "4": "Colina",
+        "5": "Llanura",
+        "6": "Valle",
+        "7": "Aguas poco profundas",
+        "8": "Mar",
+        "9": "Oceano"
+      },
+      "global_weights": {
+        "1": 20,
+        "2": 55,
+        "3": 25
+      },
+      "local_weights": {
+        "1": 30,
+        "2": 40,
+        "3": 30
+      },
+      "local_generation": {
+        "smoothing_iterations": 3,
+        "max_neighbor_delta": 1
+      }
+    }
+  },
+  "biomes": [
+    {
+      "id": "snow_peak",
+      "name": "Snow peak",
+      "conditions": {
+        "altitude": [1, 1],
+        "temperature": [7, 9]
+      },
+      "symbol": "A",
+      "color": "#d9e6ea"
+    },
+    {
+      "id": "mountain_peak",
+      "name": "Mountain peak",
+      "conditions": {
+        "altitude": [1, 1]
+      },
+      "symbol": "^",
+      "color": "#9a9a9a"
+    },
+    {
+      "id": "mountains",
+      "name": "Mountains",
+      "conditions": {
+        "altitude": [2, 2]
+      },
+      "symbol": "M",
+      "color": "#8a8a8a"
+    },
+    {
+      "id": "high_plateau",
+      "name": "High plateau",
+      "conditions": {
+        "altitude": [3, 3],
+        "humidity": [6, 9]
+      },
+      "symbol": "p",
+      "color": "#b6a46a"
+    },
+    {
+      "id": "plateau",
+      "name": "Plateau",
+      "conditions": {
+        "altitude": [3, 3]
+      },
+      "symbol": "P",
+      "color": "#a99b72"
+    },
+    {
+      "id": "hills",
+      "name": "Hills",
+      "conditions": {
+        "altitude": [4, 4]
+      },
+      "symbol": "h",
+      "color": "#9a8f5a"
+    },
+    {
+      "id": "hot_desert",
+      "name": "Hot desert",
+      "conditions": {
+        "altitude": [5, 6],
+        "temperature": [1, 4],
+        "humidity": [8, 9]
+      },
+      "symbol": "D",
+      "color": "#d9b15f"
+    },
+    {
+      "id": "steppe",
+      "name": "Steppe",
+      "conditions": {
+        "altitude": [5, 6],
+        "temperature": [3, 7],
+        "humidity": [6, 8]
+      },
+      "symbol": "s",
+      "color": "#c7bd75"
+    },
+    {
+      "id": "temperate_forest",
+      "name": "Temperate forest",
+      "conditions": {
+        "altitude": [5, 6],
+        "temperature": [4, 7],
+        "humidity": [2, 5]
+      },
+      "symbol": "F",
+      "color": "#3f8f4f"
+    },
+    {
+      "id": "jungle",
+      "name": "Jungle",
+      "conditions": {
+        "altitude": [5, 6],
+        "temperature": [1, 4],
+        "humidity": [1, 3]
+      },
+      "symbol": "J",
+      "color": "#1f7a3a"
+    },
+    {
+      "id": "wetlands",
+      "name": "Wetlands",
+      "conditions": {
+        "altitude": [6, 6],
+        "humidity": [1, 3]
+      },
+      "symbol": "w",
+      "color": "#5f8f6a"
+    },
+    {
+      "id": "shallow_waters",
+      "name": "Shallow waters",
+      "conditions": {
+        "altitude": [7, 7]
+      },
+      "symbol": ",",
+      "color": "#67b7c8"
+    },
+    {
+      "id": "warm_sea",
+      "name": "Warm sea",
+      "conditions": {
+        "altitude": [8, 8],
+        "temperature": [1, 5]
+      },
+      "symbol": "~",
+      "color": "#3ca6c8"
+    },
+    {
+      "id": "cold_sea",
+      "name": "Cold sea",
+      "conditions": {
+        "altitude": [8, 8],
+        "temperature": [6, 9]
+      },
+      "symbol": "=",
+      "color": "#2f638f"
+    },
+    {
+      "id": "ocean",
+      "name": "Ocean",
+      "conditions": {
+        "altitude": [9, 9]
+      },
+      "symbol": "O",
+      "color": "#1f4f7a"
+    }
+  ],
+  "fallback_biome": {
+    "id": "plains",
+    "name": "Plains",
+    "symbol": ".",
+    "color": "#9dbb63"
+  }
+}
