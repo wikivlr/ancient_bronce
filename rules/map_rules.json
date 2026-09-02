@@ -30,7 +30,7 @@
         "3": 30
       },
       "local_generation": {
-        "smoothing_iterations": 2,
+        "mode": "continuous",
         "max_neighbor_delta": 1
       }
     },
@@ -58,7 +58,7 @@
         "3": 30
       },
       "local_generation": {
-        "smoothing_iterations": 2,
+        "mode": "continuous",
         "max_neighbor_delta": 1
       }
     },
@@ -86,7 +86,7 @@
         "3": 30
       },
       "local_generation": {
-        "smoothing_iterations": 3,
+        "mode": "continuous",
         "max_neighbor_delta": 1
       }
     }

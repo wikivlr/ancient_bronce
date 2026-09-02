@@ -10,6 +10,8 @@ This first version focuses only on world generation:
 - Each layer has a global value from 1 to 3 and a local value from 1 to 3.
 - Local layer values are generated as smoothed neighbor regions, similar to the
   cellular-automata logic often used for cave generation.
+- Global and local layer grids use continuous generation: adjacent cells cannot
+  differ by more than 1 inside their own 1-3 scale.
 - Effective value formula:
 
 ```text
