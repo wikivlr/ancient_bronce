@@ -18,7 +18,7 @@ class LayerValues:
     category: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class LocalCell:
     global_x: int
     global_y: int
@@ -29,6 +29,10 @@ class LocalCell:
     biome: str
     symbol: str
     color: str
+    rain_units: float
+    has_river: bool
+    erosion_count: int
+    oceanic: bool
 
 
 @dataclass(frozen=True)
@@ -97,13 +101,16 @@ def generate_world(rules: dict[str, Any], seed: int | None = None) -> WorldMap:
             )
         global_cells.append(row)
 
-    return WorldMap(
+    world = WorldMap(
         width=size_rules["global_width"],
         height=size_rules["global_height"],
         local_width=size_rules["local_width"],
         local_height=size_rules["local_height"],
         global_cells=global_cells,
     )
+    if rules.get("hydrology", {}).get("enabled", False):
+        _apply_hydrology(world, rules, rng)
+    return world
 
 
 def flatten_local_cells(world: WorldMap) -> list[list[LocalCell]]:
@@ -149,6 +156,12 @@ def world_to_dict(world: WorldMap) -> dict[str, Any]:
                                 "biome": local_cell.biome,
                                 "symbol": local_cell.symbol,
                                 "color": local_cell.color,
+                                "hydrology": {
+                                    "rain_units": local_cell.rain_units,
+                                    "has_river": local_cell.has_river,
+                                    "erosion_count": local_cell.erosion_count,
+                                    "oceanic": local_cell.oceanic,
+                                },
                             }
                             for local_cell in local_row
                         ]
@@ -204,6 +217,10 @@ def _generate_local_cells(
                     biome=biome_rule["name"],
                     symbol=biome_rule["symbol"],
                     color=biome_rule["color"],
+                    rain_units=0,
+                    has_river=False,
+                    erosion_count=0,
+                    oceanic=global_layers["altitude"] == 3,
                 )
             )
         local_cells.append(row)
@@ -245,6 +262,412 @@ def _generate_effective_layers(
             category=rules["layers"][layer]["effective_scale"][str(layer_effective_value)],
         )
     return result
+
+
+def _apply_hydrology(world: WorldMap, rules: dict[str, Any], rng: random.Random) -> None:
+    hydrology_rules = rules["hydrology"]
+    rows = flatten_local_cells(world)
+    rain_sources = _select_rain_sources(rows, hydrology_rules, rng)
+    for _turn in range(hydrology_rules["turns"]):
+        _add_rainfall(rows, hydrology_rules, rain_sources)
+        transported_to = _move_rainfall_downhill(rows, hydrology_rules, rng)
+        _apply_rain_erosion(rows, rules, transported_to)
+        _mark_rivers(
+            rows,
+            hydrology_rules["river_threshold"],
+        )
+    _connect_short_water_gaps(rows, hydrology_rules)
+    _connect_rivers(rows, hydrology_rules)
+
+
+def _add_rainfall(
+    rows: list[list[LocalCell]],
+    hydrology_rules: dict[str, Any],
+    rain_sources: set[tuple[int, int, int, int]],
+) -> None:
+    rain_units = hydrology_rules["rain_units_by_effective_humidity"]
+    for row in rows:
+        for cell in row:
+            if cell.has_river:
+                continue
+            source_key = (cell.global_x, cell.global_y, cell.local_x, cell.local_y)
+            if source_key not in rain_sources:
+                continue
+            effective_humidity = cell.layers["humidity"].effective_value
+            cell.rain_units += rain_units[str(effective_humidity)]
+
+
+def _select_rain_sources(
+    rows: list[list[LocalCell]],
+    hydrology_rules: dict[str, Any],
+    rng: random.Random,
+) -> set[tuple[int, int, int, int]]:
+    max_sources = hydrology_rules.get("max_rain_sources_per_global_cell")
+    rain_units = hydrology_rules["rain_units_by_effective_humidity"]
+    candidates_by_global_cell: dict[tuple[int, int], list[LocalCell]] = {}
+    for row in rows:
+        for cell in row:
+            effective_humidity = cell.layers["humidity"].effective_value
+            if rain_units[str(effective_humidity)] <= 0:
+                continue
+            global_key = (cell.global_x, cell.global_y)
+            candidates_by_global_cell.setdefault(global_key, []).append(cell)
+
+    sources: set[tuple[int, int, int, int]] = set()
+    for candidates in candidates_by_global_cell.values():
+        rng.shuffle(candidates)
+        candidates.sort(
+            key=lambda cell: (
+                cell.layers["altitude"].effective_value,
+                cell.layers["humidity"].effective_value,
+            )
+        )
+        selected = candidates if max_sources is None else candidates[:max_sources]
+        for cell in selected:
+            sources.add((cell.global_x, cell.global_y, cell.local_x, cell.local_y))
+    return sources
+
+
+def _move_rainfall_downhill(
+    rows: list[list[LocalCell]],
+    hydrology_rules: dict[str, Any],
+    rng: random.Random,
+) -> list[list[bool]]:
+    height = len(rows)
+    width = len(rows[0])
+    next_units = [[0 for _x in range(width)] for _y in range(height)]
+    transported_to = [[False for _x in range(width)] for _y in range(height)]
+
+    for y, row in enumerate(rows):
+        for x, cell in enumerate(row):
+            if _is_oceanic_global_cell(cell):
+                continue
+            if not cell.has_river and _is_next_to_river(rows, x, y):
+                next_units[y][x] += cell.rain_units
+                continue
+            destination = _downhill_destination(rows, x, y, rng)
+            destination_x, destination_y = destination
+            destination_cell = rows[destination_y][destination_x]
+            if not _is_oceanic_global_cell(destination_cell):
+                next_units[destination_y][destination_x] += cell.rain_units
+                if destination != (x, y):
+                    transported_to[destination_y][destination_x] = True
+
+    for y, row in enumerate(rows):
+        for x, cell in enumerate(row):
+            if not cell.has_river:
+                cell.rain_units = next_units[y][x]
+
+    _mark_rivers(
+        rows,
+        hydrology_rules["river_threshold"],
+    )
+    return transported_to
+
+
+def _apply_rain_erosion(
+    rows: list[list[LocalCell]],
+    rules: dict[str, Any],
+    transported_to: list[list[bool]],
+) -> None:
+    erosion_threshold = rules["hydrology"].get("erosion_threshold")
+    if not erosion_threshold:
+        return
+    for y, row in enumerate(rows):
+        for x, cell in enumerate(row):
+            if not transported_to[y][x]:
+                continue
+            if cell.has_river:
+                continue
+            if _is_oceanic_global_cell(cell):
+                continue
+            while cell.rain_units >= (cell.erosion_count + 1) * erosion_threshold:
+                if not _lower_cell_altitude(cell, rules):
+                    break
+                _refresh_cell_biome(cell, rules)
+                cell.erosion_count += 1
+
+
+def _lower_cell_altitude(cell: LocalCell, rules: dict[str, Any]) -> bool:
+    altitude = cell.layers["altitude"]
+    if altitude.effective_value >= 9:
+        return False
+    new_effective = altitude.effective_value + 1
+    new_local = ((new_effective - 1) % 3) + 1
+    cell.layers["altitude"] = LayerValues(
+        global_value=altitude.global_value,
+        local_value=new_local,
+        effective_value=new_effective,
+        category=rules["layers"]["altitude"]["effective_scale"][str(new_effective)],
+    )
+    cell.terrain_type = cell.layers["altitude"].category
+    return True
+
+
+def _refresh_cell_biome(cell: LocalCell, rules: dict[str, Any]) -> None:
+    biome_rule = _classify_biome(rules, cell.layers)
+    cell.biome = biome_rule["name"]
+    cell.symbol = biome_rule["symbol"]
+    cell.color = biome_rule["color"]
+
+
+def _downhill_destination(
+    rows: list[list[LocalCell]],
+    x: int,
+    y: int,
+    rng: random.Random,
+) -> tuple[int, int]:
+    origin_altitude = rows[y][x].layers["altitude"].effective_value
+    downhill_candidates: list[tuple[int, int, int]] = []
+    equal_height_candidates: list[tuple[int, int]] = []
+    for neighbor_x, neighbor_y in _neighbor_positions(rows, x, y):
+        neighbor = rows[neighbor_y][neighbor_x]
+        neighbor_altitude = neighbor.layers["altitude"].effective_value
+        if neighbor_altitude > origin_altitude:
+            downhill_candidates.append((neighbor_altitude, neighbor_x, neighbor_y))
+        elif neighbor_altitude == origin_altitude:
+            equal_height_candidates.append((neighbor_x, neighbor_y))
+    if downhill_candidates:
+        lowest_altitude = max(altitude for altitude, _nx, _ny in downhill_candidates)
+        lowest_neighbors = [
+            (neighbor_x, neighbor_y)
+            for altitude, neighbor_x, neighbor_y in downhill_candidates
+            if altitude == lowest_altitude
+        ]
+        return rng.choice(lowest_neighbors)
+    if equal_height_candidates:
+        return rng.choice(equal_height_candidates)
+    return x, y
+
+
+def _mark_rivers(
+    rows: list[list[LocalCell]],
+    river_threshold: int,
+) -> None:
+    for y, row in enumerate(rows):
+        for x, cell in enumerate(row):
+            if _is_oceanic_global_cell(cell):
+                continue
+            if cell.rain_units >= river_threshold:
+                cell.has_river = True
+                cell.rain_units = river_threshold
+
+
+def _connect_rivers(rows: list[list[LocalCell]], hydrology_rules: dict[str, Any]) -> None:
+    if not hydrology_rules.get("connect_large_rivers_to_sea", False):
+        return
+    min_component_size = hydrology_rules.get("min_river_component_size_for_connection", 1)
+    for _pass in range(hydrology_rules.get("river_connection_passes", 1)):
+        changed = False
+        for component in _river_components(rows):
+            if len(component) < min_component_size:
+                continue
+            if _component_touches_sea(rows, component):
+                continue
+            start = _lowest_component_position(rows, component)
+            target = _nearest_sea(rows, start[0], start[1])
+            if target is None:
+                continue
+            path = _lowest_neighbor_route(rows, start, target)
+            if not path:
+                continue
+            changed = _mark_river_path(rows, path, hydrology_rules["river_threshold"]) or changed
+        if not changed:
+            break
+
+
+def _connect_short_water_gaps(rows: list[list[LocalCell]], hydrology_rules: dict[str, Any]) -> None:
+    gap_distance = hydrology_rules.get("connect_water_gaps_distance")
+    if gap_distance != 2:
+        return
+    river_threshold = hydrology_rules["river_threshold"]
+    for y, row in enumerate(rows):
+        for x, cell in enumerate(row):
+            if not cell.has_river:
+                continue
+            for offset_x, offset_y in (
+                (-2, 0),
+                (-1, -1),
+                (-1, 1),
+                (0, -2),
+                (0, 2),
+                (1, -1),
+                (1, 1),
+                (2, 0),
+            ):
+                target_x = x + offset_x
+                target_y = y + offset_y
+                if not _is_inside(rows, target_x, target_y):
+                    continue
+                target = rows[target_y][target_x]
+                if not target.has_river and not _is_oceanic_global_cell(target):
+                    continue
+                middle_positions = _shared_orthogonal_neighbors(rows, x, y, target_x, target_y)
+                if not middle_positions:
+                    continue
+                mid_x, mid_y = max(
+                    middle_positions,
+                    key=lambda position: rows[position[1]][position[0]].layers["altitude"].effective_value,
+                )
+                middle = rows[mid_y][mid_x]
+                if middle.has_river or _is_oceanic_global_cell(middle):
+                    continue
+                middle.has_river = True
+                middle.rain_units = river_threshold
+
+
+def _mark_river_path(
+    rows: list[list[LocalCell]],
+    path: list[tuple[int, int]],
+    river_threshold: int,
+) -> bool:
+    changed = False
+    for path_x, path_y in path:
+        cell = rows[path_y][path_x]
+        if _is_oceanic_global_cell(cell):
+            continue
+        if not cell.has_river:
+            cell.has_river = True
+            cell.rain_units = river_threshold
+            changed = True
+    return changed
+
+
+def _river_components(rows: list[list[LocalCell]]) -> list[set[tuple[int, int]]]:
+    components: list[set[tuple[int, int]]] = []
+    visited: set[tuple[int, int]] = set()
+    for y, row in enumerate(rows):
+        for x, cell in enumerate(row):
+            if not cell.has_river or (x, y) in visited:
+                continue
+            component = _flood_river_component(rows, x, y)
+            visited.update(component)
+            components.append(component)
+    return components
+
+
+def _flood_river_component(rows: list[list[LocalCell]], x: int, y: int) -> set[tuple[int, int]]:
+    component = {(x, y)}
+    frontier = [(x, y)]
+    while frontier:
+        current_x, current_y = frontier.pop()
+        for neighbor_x, neighbor_y in _neighbor_positions(rows, current_x, current_y):
+            neighbor_position = (neighbor_x, neighbor_y)
+            if neighbor_position in component:
+                continue
+            if rows[neighbor_y][neighbor_x].has_river:
+                component.add(neighbor_position)
+                frontier.append(neighbor_position)
+    return component
+
+
+def _component_touches_sea(rows: list[list[LocalCell]], component: set[tuple[int, int]]) -> bool:
+    for x, y in component:
+        for neighbor_x, neighbor_y in _neighbor_positions(rows, x, y):
+            if _is_oceanic_global_cell(rows[neighbor_y][neighbor_x]):
+                return True
+    return False
+
+
+def _lowest_component_position(
+    rows: list[list[LocalCell]],
+    component: set[tuple[int, int]],
+) -> tuple[int, int]:
+    return max(
+        component,
+        key=lambda position: rows[position[1]][position[0]].layers["altitude"].effective_value,
+    )
+
+
+def _nearest_sea(rows: list[list[LocalCell]], x: int, y: int) -> tuple[int, int] | None:
+    candidates: list[tuple[int, int, int]] = []
+    for target_y, row in enumerate(rows):
+        for target_x, cell in enumerate(row):
+            if not _is_oceanic_global_cell(cell):
+                continue
+            distance = abs(target_x - x) + abs(target_y - y)
+            candidates.append((distance, target_x, target_y))
+    if not candidates:
+        return None
+    _distance, target_x, target_y = min(candidates)
+    return target_x, target_y
+
+
+def _lowest_neighbor_route(
+    rows: list[list[LocalCell]],
+    start: tuple[int, int],
+    target: tuple[int, int],
+) -> list[tuple[int, int]]:
+    path = [start]
+    visited = {start}
+    current = start
+    max_steps = len(rows) + len(rows[0])
+    for _step in range(max_steps):
+        if current == target:
+            return path
+        current_x, current_y = current
+        candidates = [
+            (neighbor_x, neighbor_y)
+            for neighbor_x, neighbor_y in _neighbor_positions(rows, current_x, current_y)
+            if (neighbor_x, neighbor_y) not in visited
+        ]
+        if not candidates:
+            return []
+        current_distance = abs(target[0] - current_x) + abs(target[1] - current_y)
+        closer_candidates = [
+            position
+            for position in candidates
+            if abs(target[0] - position[0]) + abs(target[1] - position[1]) < current_distance
+        ]
+        if closer_candidates:
+            candidates = closer_candidates
+        next_position = min(
+            candidates,
+            key=lambda position: (
+                -rows[position[1]][position[0]].layers["altitude"].effective_value,
+                abs(target[0] - position[0]) + abs(target[1] - position[1]),
+            ),
+        )
+        path.append(next_position)
+        visited.add(next_position)
+        current = next_position
+        if rows[current[1]][current[0]].has_river or _is_oceanic_global_cell(rows[current[1]][current[0]]):
+            return path
+    return []
+
+
+def _is_oceanic_global_cell(cell: LocalCell) -> bool:
+    return cell.oceanic
+
+
+def _is_next_to_river(rows: list[list[LocalCell]], x: int, y: int) -> bool:
+    return any(rows[neighbor_y][neighbor_x].has_river for neighbor_x, neighbor_y in _neighbor_positions(rows, x, y))
+
+
+def _neighbor_positions(rows: list[list[LocalCell]], x: int, y: int) -> list[tuple[int, int]]:
+    positions: list[tuple[int, int]] = []
+    for offset_x, offset_y in ((0, -1), (1, 0), (0, 1), (-1, 0)):
+        neighbor_x = x + offset_x
+        neighbor_y = y + offset_y
+        if 0 <= neighbor_y < len(rows) and 0 <= neighbor_x < len(rows[0]):
+            positions.append((neighbor_x, neighbor_y))
+    return positions
+
+
+def _is_inside(rows: list[list[LocalCell]], x: int, y: int) -> bool:
+    return 0 <= y < len(rows) and 0 <= x < len(rows[0])
+
+
+def _shared_orthogonal_neighbors(
+    rows: list[list[LocalCell]],
+    first_x: int,
+    first_y: int,
+    second_x: int,
+    second_y: int,
+) -> list[tuple[int, int]]:
+    first_neighbors = set(_neighbor_positions(rows, first_x, first_y))
+    second_neighbors = set(_neighbor_positions(rows, second_x, second_y))
+    return list(first_neighbors & second_neighbors)
 
 
 def _generate_value_grid(

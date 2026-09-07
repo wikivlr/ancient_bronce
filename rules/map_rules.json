@@ -5,6 +5,28 @@
     "local_width": 10,
     "local_height": 10
   },
+  "hydrology": {
+    "enabled": true,
+    "turns": 300,
+    "river_threshold": 21,
+    "erosion_threshold": 0,
+    "max_rain_sources_per_global_cell": 3,
+    "connect_large_rivers_to_sea": true,
+    "connect_water_gaps_distance": 2,
+    "river_connection_passes": 4,
+    "min_river_component_size_for_connection": 15,
+    "rain_units_by_effective_humidity": {
+      "1": 0.24,
+      "2": 0.2,
+      "3": 0.16,
+      "4": 0.12,
+      "5": 0.08,
+      "6": 0.04,
+      "7": 0,
+      "8": 0,
+      "9": 0
+    }
+  },
   "layers": {
     "temperature": {
       "description": "1 is hottest, 9 is coldest.",

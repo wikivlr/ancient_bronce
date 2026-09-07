@@ -32,6 +32,36 @@ Altitude effective scale:
 | 8 | Mar |
 | 9 | Oceano |
 
+Hydrology:
+
+- Hydrology is local-only and runs over the full local map, crossing global-cell
+  boundaries.
+- Rain generation depends on effective humidity, combining global and local
+  humidity into a 1-9 value. Wetter cells generate more rain units each turn;
+  dry cells generate none.
+- Current rain units by effective humidity: 1=0.24, 2=0.20, 3=0.16, 4=0.12,
+  5=0.08, 6=0.04, 7-9=0.
+- Each global cell can have up to 3 local rain sources. Only those selected
+  source cells generate rain during the hydrology simulation. Sources are
+  selected from the highest local cells, breaking ties by wetter humidity.
+- Rain units move to an orthogonal neighboring local cell with lower physical
+  elevation when possible. In the altitude scale this means a higher effective
+  altitude number, because 1 is mountain peak and 9 is ocean.
+- If there is no lower neighboring cell but there are equal-height neighbors,
+  rain moves to a random equal-height neighbor.
+- Rain erosion is currently disabled.
+- A cell becomes a river when it reaches 21 rain units.
+- River cells at distance 2 from another river or sea cell fill the lowest
+  intermediate orthogonal gap to connect both water cells.
+- After hydrology simulation, river masses of at least 15 river cells are
+  connected to the nearest sea through the lowest physical-altitude route.
+  This cleanup runs up to 4 passes.
+- Cells whose global altitude value is 3 are oceanic and cannot become rivers,
+  erode, or transport rain units. Rain units that reach them disappear.
+- River cells do not erode, but rain units continue flowing through them.
+- Cells next to a river stop transporting rain and accumulate it until they
+  become river cells too.
+
 Run the console demo:
 
 ```bash
