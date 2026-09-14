@@ -19,11 +19,13 @@ def main() -> None:
     save_world(OUTPUT_PATH, world)
     local_rows = flatten_local_cells(world)
     biome_counts = Counter(cell.biome for row in local_rows for cell in row)
+    river_cells = sum(1 for row in local_rows for cell in row if cell.has_river)
 
     print("Ancient Bronce - first generated world")
     print(f"Global map: {world.width} x {world.height}")
     print(f"Local map per global cell: {world.local_width} x {world.local_height}")
     print(f"Total local cells: {len(local_rows) * len(local_rows[0])}")
+    print(f"River cells: {river_cells}")
     print(f"Output: {OUTPUT_PATH}")
     print()
     print("Local world view:")

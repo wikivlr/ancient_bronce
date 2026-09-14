@@ -27,6 +27,258 @@
       "9": 0
     }
   },
+  "resources": {
+    "enabled": true,
+    "description": "Boolean local layers. A true value means that the resource naturally occurs or can be obtained in the cell.",
+    "types": {
+      "copper": {
+        "name": "Cobre",
+        "category": "mineral",
+        "base_chance": 0.045,
+        "spread_chance": 0.48,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [1, 4], "humidity": [6, 9], "temperature": [2, 8]}}
+        ]
+      },
+      "tin": {
+        "name": "Estano",
+        "category": "mineral",
+        "base_chance": 0.025,
+        "spread_chance": 0.38,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [1, 4], "humidity": [2, 7], "temperature": [4, 9]}}
+        ]
+      },
+      "stone": {
+        "name": "Piedra",
+        "category": "mineral",
+        "base_chance": 0.12,
+        "spread_chance": 0.58,
+        "spread_passes": 3,
+        "habitats": [
+          {"layers": {"altitude": [1, 4]}},
+          {"layers": {"altitude": [5, 6]}, "biomes": ["Steppe"]}
+        ]
+      },
+      "clay": {
+        "name": "Arcilla",
+        "category": "mineral",
+        "base_chance": 0.08,
+        "spread_chance": 0.55,
+        "spread_passes": 3,
+        "habitats": [
+          {"layers": {"altitude": [5, 6], "humidity": [1, 6]}},
+          {"layers": {"altitude": [5, 6]}, "has_river": true}
+        ]
+      },
+      "wood": {
+        "name": "Madera",
+        "category": "plant",
+        "base_chance": 0.16,
+        "spread_chance": 0.68,
+        "spread_passes": 4,
+        "habitats": [
+          {"biomes": ["Temperate forest", "Jungle"]}
+        ]
+      },
+      "wheat": {
+        "name": "Trigo",
+        "category": "crop",
+        "base_chance": 0.075,
+        "spread_chance": 0.42,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [3, 7], "humidity": [3, 7]}, "biomes": ["Hills", "Steppe", "Plains"]}
+        ]
+      },
+      "potatoes": {
+        "name": "Patatas",
+        "category": "crop",
+        "origin": "americas",
+        "base_chance": 0.055,
+        "spread_chance": 0.38,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [3, 5], "temperature": [5, 8], "humidity": [3, 6]}}
+        ]
+      },
+      "cabbages": {
+        "name": "Coles",
+        "category": "crop",
+        "base_chance": 0.055,
+        "spread_chance": 0.4,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [4, 8], "humidity": [2, 5]}, "biomes": ["Hills", "Temperate forest", "Plains"]}
+        ]
+      },
+      "maize": {
+        "name": "Maiz",
+        "category": "crop",
+        "origin": "americas",
+        "base_chance": 0.06,
+        "spread_chance": 0.42,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [2, 6], "humidity": [2, 6]}, "biomes": ["Jungle", "Plains"]}
+        ]
+      },
+      "deer": {
+        "name": "Ciervos",
+        "category": "animal",
+        "base_chance": 0.06,
+        "spread_chance": 0.36,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [3, 6], "temperature": [3, 8], "humidity": [2, 7]}, "biomes": ["Plateau", "Hills", "Temperate forest", "Steppe", "Plains"]}
+        ]
+      },
+      "cattle": {
+        "name": "Vacas",
+        "category": "animal",
+        "base_chance": 0.055,
+        "spread_chance": 0.42,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [3, 7], "humidity": [2, 6]}, "biomes": ["Hills", "Plains"]}
+        ]
+      },
+      "sheep": {
+        "name": "Ovejas",
+        "category": "animal",
+        "base_chance": 0.065,
+        "spread_chance": 0.45,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [3, 6], "temperature": [3, 8], "humidity": [4, 8]}, "biomes": ["Plateau", "Hills", "Steppe", "Plains"]}
+        ]
+      },
+      "goats": {
+        "name": "Cabras",
+        "category": "animal",
+        "base_chance": 0.07,
+        "spread_chance": 0.46,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [2, 5], "temperature": [2, 8], "humidity": [4, 9]}, "biomes": ["Mountains", "High plateau", "Plateau", "Hills", "Steppe"]}
+        ]
+      },
+      "llamas": {
+        "name": "Llamas",
+        "category": "animal",
+        "origin": "americas",
+        "base_chance": 0.05,
+        "spread_chance": 0.4,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [2, 4], "temperature": [5, 9], "humidity": [4, 8]}, "biomes": ["Mountains", "High plateau", "Plateau", "Hills"]}
+        ]
+      },
+      "horses": {
+        "name": "Caballos",
+        "category": "animal",
+        "base_chance": 0.045,
+        "spread_chance": 0.4,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [3, 6], "temperature": [3, 8], "humidity": [4, 8]}, "biomes": ["Plateau", "Hills", "Steppe", "Plains"]}
+        ]
+      },
+      "camels": {
+        "name": "Camellos",
+        "category": "animal",
+        "base_chance": 0.04,
+        "spread_chance": 0.36,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [1, 5], "humidity": [7, 9]}, "biomes": ["Hills", "Hot desert", "Steppe", "Plains"]}
+        ]
+      },
+      "elephants": {
+        "name": "Elefantes",
+        "category": "animal",
+        "base_chance": 0.028,
+        "spread_chance": 0.32,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [1, 5], "humidity": [1, 6]}, "biomes": ["Jungle", "Plains"]}
+        ]
+      },
+      "fish": {
+        "name": "Peces",
+        "category": "aquatic",
+        "base_chance": 0.13,
+        "spread_chance": 0.6,
+        "spread_passes": 3,
+        "habitats": [
+          {"layers": {"altitude": [7, 9]}},
+          {"has_river": true}
+        ]
+      },
+      "crabs": {
+        "name": "Cangrejos",
+        "category": "aquatic",
+        "base_chance": 0.07,
+        "spread_chance": 0.48,
+        "spread_passes": 2,
+        "habitats": [
+          {"layers": {"altitude": [7, 8], "temperature": [1, 6]}}
+        ]
+      },
+      "mollusks": {
+        "name": "Moluscos",
+        "category": "aquatic",
+        "base_chance": 0.09,
+        "spread_chance": 0.52,
+        "spread_passes": 3,
+        "habitats": [
+          {"layers": {"altitude": [7, 8], "temperature": [2, 8]}}
+        ]
+      },
+      "bears": {
+        "name": "Osos",
+        "category": "predator",
+        "base_chance": 0.025,
+        "spread_chance": 0.25,
+        "spread_passes": 1,
+        "habitats": [
+          {"layers": {"altitude": [2, 6], "temperature": [4, 9], "humidity": [1, 6]}, "biomes": ["Mountains", "Plateau", "Hills", "Temperate forest", "Plains"]}
+        ]
+      },
+      "wolves": {
+        "name": "Lobos",
+        "category": "predator",
+        "base_chance": 0.035,
+        "spread_chance": 0.3,
+        "spread_passes": 1,
+        "habitats": [
+          {"layers": {"altitude": [2, 6], "temperature": [3, 9], "humidity": [2, 8]}, "biomes": ["Mountains", "High plateau", "Plateau", "Hills", "Temperate forest", "Steppe", "Plains"]}
+        ]
+      },
+      "lions": {
+        "name": "Leones",
+        "category": "predator",
+        "base_chance": 0.025,
+        "spread_chance": 0.25,
+        "spread_passes": 1,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [1, 5], "humidity": [3, 8]}, "biomes": ["Hot desert", "Steppe", "Plains"]}
+        ]
+      },
+      "tigers": {
+        "name": "Tigres",
+        "category": "predator",
+        "base_chance": 0.02,
+        "spread_chance": 0.24,
+        "spread_passes": 1,
+        "habitats": [
+          {"layers": {"altitude": [4, 6], "temperature": [1, 6], "humidity": [1, 4]}, "biomes": ["Jungle", "Temperate forest", "Wetlands"]}
+        ]
+      }
+    }
+  },
   "layers": {
     "temperature": {
       "description": "1 is hottest, 9 is coldest.",

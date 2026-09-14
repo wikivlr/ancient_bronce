@@ -1,0 +1,75 @@
+{
+  "human": {
+    "max_health": 3,
+    "max_hunger": 3,
+    "max_thirst": 3,
+    "max_fatigue": 3,
+    "hunger_loss_per_turn": 1,
+    "thirst_loss_per_turn": 1,
+    "movement_cells_per_turn": 3,
+    "temperature_by_effective_value": {
+      "1": 3,
+      "2": 2,
+      "3": 1,
+      "4": 0,
+      "5": 0,
+      "6": 0,
+      "7": -1,
+      "8": -2,
+      "9": -3
+    }
+  },
+  "actions": {
+    "move": {
+      "name": "Moverse",
+      "fatigue_cost": 1,
+      "limit_per_turn": null,
+      "movement_limit": 3
+    },
+    "interact": {
+      "name": "Interactuar con el mapa",
+      "fatigue_cost": 1,
+      "limit_per_turn": null
+    },
+    "craft_build": {
+      "name": "Fabricar / Construir",
+      "fatigue_cost": 1,
+      "limit_per_turn": null
+    },
+    "research": {
+      "name": "Investigar",
+      "fatigue_cost": 1,
+      "limit_per_turn": null
+    },
+    "copulate": {
+      "name": "Copular",
+      "fatigue_cost": 1,
+      "limit_per_turn": null
+    },
+    "rest": {
+      "name": "Descansar",
+      "fatigue_cost": 0,
+      "limit_per_turn": 1,
+      "ends_person_turn": true,
+      "fatigue_recovery": 3
+    },
+    "take_drop": {
+      "name": "Coger / dejar objeto",
+      "fatigue_cost": 0,
+      "limit_per_turn": null,
+      "free_action": true
+    },
+    "eat": {
+      "name": "Comer",
+      "fatigue_cost": 0,
+      "limit_per_turn": null,
+      "free_action": true
+    },
+    "drink": {
+      "name": "Beber",
+      "fatigue_cost": 0,
+      "limit_per_turn": null,
+      "free_action": true
+    }
+  }
+}

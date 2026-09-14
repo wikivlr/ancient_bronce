@@ -33,6 +33,7 @@ class LocalCell:
     has_river: bool
     erosion_count: int
     oceanic: bool
+    resources: dict[str, bool]
 
 
 @dataclass(frozen=True)
@@ -110,6 +111,8 @@ def generate_world(rules: dict[str, Any], seed: int | None = None) -> WorldMap:
     )
     if rules.get("hydrology", {}).get("enabled", False):
         _apply_hydrology(world, rules, rng)
+    if rules.get("resources", {}).get("enabled", False):
+        _apply_resources(world, rules, rng)
     return world
 
 
@@ -162,6 +165,7 @@ def world_to_dict(world: WorldMap) -> dict[str, Any]:
                                     "erosion_count": local_cell.erosion_count,
                                     "oceanic": local_cell.oceanic,
                                 },
+                                "resources": local_cell.resources,
                             }
                             for local_cell in local_row
                         ]
@@ -221,10 +225,89 @@ def _generate_local_cells(
                     has_river=False,
                     erosion_count=0,
                     oceanic=global_layers["altitude"] == 3,
+                    resources={},
                 )
             )
         local_cells.append(row)
     return local_cells
+
+
+def _apply_resources(world: WorldMap, rules: dict[str, Any], rng: random.Random) -> None:
+    """Generate one boolean local layer per configured resource.
+
+    Resources are generated after hydrology so habitats can depend on rivers.
+    Initial occurrences are expanded in simultaneous passes, producing coherent
+    deposits and populations without making resource layers affect one another.
+    """
+    rows = flatten_local_cells(world)
+    height = len(rows)
+    width = len(rows[0])
+    resource_rules = rules["resources"]
+
+    for row in rows:
+        for cell in row:
+            cell.resources = {
+                resource_id: False
+                for resource_id in resource_rules.get("types", {})
+            }
+
+    for resource_id, resource_rule in resource_rules.get("types", {}).items():
+        suitable = [
+            [_resource_is_suitable(cell, resource_rule) for cell in row]
+            for row in rows
+        ]
+        present = [
+            [
+                suitable[y][x] and rng.random() < resource_rule["base_chance"]
+                for x in range(width)
+            ]
+            for y in range(height)
+        ]
+
+        for _pass in range(resource_rule.get("spread_passes", 0)):
+            next_present = [row[:] for row in present]
+            for y in range(height):
+                for x in range(width):
+                    if present[y][x] or not suitable[y][x]:
+                        continue
+                    occupied_neighbors = sum(
+                        present[neighbor_y][neighbor_x]
+                        for neighbor_x, neighbor_y in _neighbor_positions(rows, x, y)
+                    )
+                    if occupied_neighbors == 0:
+                        continue
+                    spread_chance = 1 - (1 - resource_rule["spread_chance"]) ** occupied_neighbors
+                    if rng.random() < spread_chance:
+                        next_present[y][x] = True
+            present = next_present
+
+        for y, row in enumerate(rows):
+            for x, cell in enumerate(row):
+                cell.resources[resource_id] = present[y][x]
+
+
+def _resource_is_suitable(cell: LocalCell, resource_rule: dict[str, Any]) -> bool:
+    """A resource may use several alternative habitats; each habitat is ANDed."""
+    return any(
+        _cell_matches_habitat(cell, habitat)
+        for habitat in resource_rule.get("habitats", [])
+    )
+
+
+def _cell_matches_habitat(cell: LocalCell, habitat: dict[str, Any]) -> bool:
+    layer_conditions = habitat.get("layers", {})
+    if any(
+        not _in_range(cell.layers[layer].effective_value, value_range)
+        for layer, value_range in layer_conditions.items()
+    ):
+        return False
+    if "biomes" in habitat and cell.biome not in habitat["biomes"]:
+        return False
+    if "has_river" in habitat and cell.has_river != habitat["has_river"]:
+        return False
+    if "oceanic" in habitat and cell.oceanic != habitat["oceanic"]:
+        return False
+    return True
 
 
 def _generate_local_layer_grid(

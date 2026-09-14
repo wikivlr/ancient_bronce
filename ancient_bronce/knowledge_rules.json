@@ -1,0 +1,44 @@
+{
+  "knowledge": {
+    "agriculture": {
+      "name": "Agricultura",
+      "description": "Cultivo deliberado de plantas alimentarias.",
+      "prerequisites": [],
+      "group_requirements": {
+        "hungry_fraction": {
+          "numerator": 1,
+          "denominator": 2,
+          "rounding": "floor",
+          "hunger_below": 2
+        }
+      },
+      "discovery_paths": [
+        {
+          "id": "wheat_observation",
+          "name": "Observacion del trigo",
+          "researcher_inventory": {"wheat": 1},
+          "cell": {"biomes": ["Plains"]}
+        },
+        {
+          "id": "rice_observation",
+          "name": "Observacion del arroz",
+          "researcher_inventory": {"rice": 1},
+          "cell": {"has_river": true}
+        }
+      ],
+      "unlocks_constructions": ["wheat_field", "rice_paddy"]
+    }
+  },
+  "constructions": {
+    "wheat_field": {
+      "name": "Campo de trigo",
+      "required_knowledge": ["agriculture"],
+      "cell": {"biomes": ["Plains"]}
+    },
+    "rice_paddy": {
+      "name": "Arrozal",
+      "required_knowledge": ["agriculture"],
+      "cell": {"has_river": true}
+    }
+  }
+}
