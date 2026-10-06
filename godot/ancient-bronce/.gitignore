@@ -1,3 +1,4 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+godot/ancient-bronce/data/generated_world.json

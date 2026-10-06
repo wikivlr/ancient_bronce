@@ -36,6 +36,14 @@ def _terrain_image(rows: list[list[object]]) -> np.ndarray:
     return np.array([[_hex_rgb(cell.color) for cell in row] for row in rows])
 
 
+def _river_overlay(rows: list[list[object]]) -> np.ndarray:
+    rivers = np.array([[cell.has_river for cell in row] for row in rows])
+    overlay = np.zeros((*rivers.shape, 4), dtype=float)
+    overlay[..., :3] = _hex_rgb("#1f78d1")
+    overlay[..., 3] = rivers.astype(float) * 0.74
+    return overlay
+
+
 def _quantity_grid(rows: list[list[object]], resource: str) -> np.ndarray:
     return np.array([[cell.resources[resource] for cell in row] for row in rows])
 
@@ -52,6 +60,7 @@ def main() -> None:
     world = generate_world(rules, seed=7)
     rows = flatten_local_cells(world)
     terrain = _terrain_image(rows)
+    rivers = _river_overlay(rows)
     resource_rules = rules["resources"]["types"]
 
     columns = 4
@@ -63,6 +72,7 @@ def main() -> None:
         quantities = _quantity_grid(rows, resource_id)
         occupied = quantities != 0
         ax.imshow(terrain, interpolation="nearest", alpha=0.36)
+        ax.imshow(rivers, interpolation="nearest")
 
         overlay = np.zeros((*quantities.shape, 4), dtype=float)
         overlay[..., :3] = _hex_rgb(CATEGORY_COLORS[resource_rule["category"]])
